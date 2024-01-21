@@ -1,0 +1,52 @@
+{
+    "football": {
+        "id" : 1,
+        "groups" : [
+            {
+                "name" : "SPORTCAST | Футбол | Смотреть АПЛ онлайн",
+                "url" : "https://vk.com/sportcast.online",
+                "id" : -214218677
+            }
+        ]
+    },
+    "tennis": {
+        "id" : 2,
+        "groups" : [
+            {
+                "name" : "SPORTCAST | Теннис. Australian Open | AO",
+                "url" : "https://vk.com/sportcast_tennis",
+                "id" : -219027590
+            }
+        ]
+    },
+    "basketball": {
+        "id" : 3,
+        "groups" : [
+            {
+                "name" : "AANBA | Трансляции матчей NBA | НБА в России",
+                "url" : "https://vk.com/all_about_nba",
+                "id" : -55574239
+            }
+        ]
+    },
+    "hockey": {
+        "id" : 4,
+        "groups" : [
+            {
+                "name" : "SPORTCAST | NHL | Смотреть НХЛ онлайн",
+                "url" : "https://vk.com/sportcast_nhl",
+                "id" : -41593209
+            }
+        ]
+    },
+    "volleyball": {
+        "id" : 12,
+        "groups" : [
+            {
+                "name" : "Волейбол | Трансляции",
+                "url" : "https://vk.com/voleybol_online",
+                "id" : -22055
+            }
+        ]
+    }
+}
