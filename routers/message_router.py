@@ -1,6 +1,6 @@
+from datetime import datetime
 from aiogram import  Router, types
 from aiogram.utils.markdown import hitalic, hbold, hlink
-from datetime import datetime
 
 from parsing.flash_score import getInfo
 from parsing.classes import filter_games

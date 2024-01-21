@@ -1,11 +1,9 @@
 import asyncio
 import requests
-import json
 import os
+import json
 
 from dotenv import load_dotenv
-
-
 
 with open('parsing/vk_groups.json') as f:
     file_content = f.read()

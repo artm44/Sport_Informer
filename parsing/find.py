@@ -1,6 +1,8 @@
-from urllib.parse import urlencode
 import requests
 import json
+
+from urllib.parse import urlencode
+
 
 def getUrlParams(team: str) -> (bool, str, str, str):
     param = urlencode({'q': team})
