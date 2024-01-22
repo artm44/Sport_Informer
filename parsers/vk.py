@@ -1,17 +1,12 @@
 import asyncio
 import requests
-import os
 import json
 
-from dotenv import load_dotenv
+from config import VK_TOKEN
 
-with open('parsing/vk_groups.json') as f:
+with open('parsers/vk_groups.json') as f:
     file_content = f.read()
     templates = json.loads(file_content)
-
-
-load_dotenv()
-TOKEN = os.getenv('VK_TOKEN')
 
 
 async def getVideos(sport: str, count: int=10) -> [{}]:
@@ -20,7 +15,7 @@ async def getVideos(sport: str, count: int=10) -> [{}]:
     videos = []
     for group in groups:
         params = {
-            'access_token': TOKEN,
+            'access_token': VK_TOKEN,
             'v': '5.131',
             'owner_id': group['id'],
             'count' : count

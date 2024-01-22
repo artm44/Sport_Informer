@@ -1,10 +1,11 @@
 import asyncio
+import re
 import requests
 from datetime import datetime
-import re
 
-from parsing.find import getUrlParams
-from parsing.classes import GameInfo
+
+from parsers.find import getUrlParams
+from parsers.models import GameInfo
 
 HEADERS = {"X-Fsign": "SW9D1eZo"}
 
@@ -94,7 +95,6 @@ async def getShedule(sport_id: int, date: int = 0) -> list[GameInfo]:
         status = True if item.get('AN') == "y" else False
 
         games.append(GameInfo(date, tournament, player1, player2, score1, score2, sport_id, status))
-    #games = sorted(games, key=lambda game: game.date)
     return games
 
 

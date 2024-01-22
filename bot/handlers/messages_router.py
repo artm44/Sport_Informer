@@ -2,13 +2,13 @@ from datetime import datetime
 from aiogram import  Router, types
 from aiogram.utils.markdown import hitalic, hbold, hlink
 
-from parsing.flash_score import getInfo
-from parsing.classes import filter_games
-from parsing.vk import getBroadcastLink, getVideos
+from parsers.flash_score import getInfo
+from parsers.models import filter_games
+from parsers.vk import getBroadcastLink, getVideos
 
-message_router = Router()
+messages_router = Router()
 
-@message_router.message()
+@messages_router.message()
 async def info_handler(message: types.Message) -> None:
     """
     Handler will forward receive a message back to the sender
