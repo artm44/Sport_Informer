@@ -35,6 +35,10 @@ async def command_sport_handler(message: types.Message) -> None:
     sport = message.text[1:]
     sport_id = SPORTS.get(sport)
     games = await getShedule(sport_id)
+    if len(games) == 0:
+        answer = "Матчей сегодня нет"
+        await message.answer(text=answer)
+        return
     videos = await getVideos(sport)
     tournament = games[0].tournament
     answer = "Расписание на сегодня\n" + hitalic(tournament) + '\n'
@@ -51,6 +55,7 @@ async def command_sport_handler(message: types.Message) -> None:
     await message.answer(text=answer)
 
     games = await getShedule(sport_id, 1)
+    if len(games) == 0: return
     tournament = games[0].tournament
     answer = "Расписание на завтра\n" + hitalic(tournament) + '\n'
     for game in games:

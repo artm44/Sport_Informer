@@ -19,9 +19,10 @@ async def info_handler(message: types.Message) -> None:
     if len(games) == 0:
         await message.answer("Такой команды или не спортсмена не найдено!\nПопробуйте снова")
         return
-
-    games = filter_games(games, 4, 3)
+    
     videos = await getVideos(games[0].sport)
+    games = await filter_games(games, 4, 3)
+
     tournament = ""
     
     today = datetime.now()

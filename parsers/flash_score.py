@@ -1,28 +1,44 @@
 import asyncio
+import aiohttp
 import re
-import requests
+import json
+
 from datetime import datetime
+from typing import List
+from urllib.parse import urlencode
 
-
-from parsers.find import getUrlParams
 from parsers.models import GameInfo
 
 HEADERS = {"X-Fsign": "SW9D1eZo"}
 
-async def getInfo(name: str) -> list[GameInfo]:
-    response = getUrlParams(name)
-    if not response[0]:
-        return []
-    url_params = response[1:]
-    url = f"https://www.flashscorekz.com/{url_params[0]}/{url_params[1]}/{url_params[2]}/"
-    response = requests.get(url=url, headers=HEADERS)
+async def getUrlParams(team: str) -> list[str] | None:
+    param = urlencode({'q': team})
 
-    text = re.findall(r'summary-[results, fixtures].*\n.*`(SA.*)' , response.text)
+    url = f"https://s.livesport.services/api/v2/search/?{param}&lang-id=12&type-ids=1,2,3,4&project-id=46&project-type-id=1"
+    async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                text = await response.text() 
+    if text == "[]":
+        return None
+    return [json.loads(text)[0]['type']['name'].lower(), json.loads(text)[0]['url'], json.loads(text)[0]['id']]
+
+async def getInfo(name: str) -> list[GameInfo]:
+    response = await getUrlParams(name)
+    if response is None:
+        return []
+    url_params = response
+    url = f"https://www.flashscorekz.com/{url_params[0]}/{url_params[1]}/{url_params[2]}/"
+
+    async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                response_text = await response.text()
+
+    text = re.findall(r'summary-[results, fixtures].*\n.*`(SA.*)' , response_text)
 
     if len(text) == 0:
         return []
     
-    sport_id = int(re.search(r'sport=(\d+)' , response.text).group(1))
+    sport_id = int(re.search(r'sport=(\d+)' , response_text).group(1))
 
     data_list = [{}]
     for txt in text:
@@ -58,8 +74,9 @@ async def getInfo(name: str) -> list[GameInfo]:
 
 async def getShedule(sport_id: int, date: int = 0) -> list[GameInfo]:
     url = f"https://local-ruua.flashscore.ninja/46/x/feed/f_{sport_id}_{date}_3_ru-kz_1"
-    response = requests.get(url=url, headers=HEADERS)
-    text = response.text
+    async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=HEADERS) as response:
+                text = await response.text()
     data_list = [{}]
     data = text.split('¬')
     for item in data:
@@ -67,26 +84,26 @@ async def getShedule(sport_id: int, date: int = 0) -> list[GameInfo]:
         if '~' in item:
             data_list.append({key: value})
         else:
-            data_list[-1].update({key: value})
-    tournaments = []
-    for item in data_list:
-         if '~ZA' in list(item.keys())[0] and item.get('ZD') == 't':
-             tournaments.append(item)
+            data_list[-1].update({key: value})    
 
     games = []
     tournament = None
     is_important = False
     for item in data_list:
-        if '~ZA' in list(item.keys())[0]:
+        if '~ZA' in list(item.keys())[0]: #tournament
             tournament = item.get('~ZA')
             if item.get('ZD') == 't':
                 is_important = True
             else:
                 is_important = False
-        if '~AA' not in list(item.keys())[0]:
             continue
+
         if not is_important:
             continue
+
+        if '~AA' not in list(item.keys())[0]: #game
+            continue
+        
         date = datetime.fromtimestamp(int(item.get('AD')))
         player1 = item.get('AE')
         player2 = item.get('AF')
@@ -99,9 +116,9 @@ async def getShedule(sport_id: int, date: int = 0) -> list[GameInfo]:
 
 
 def main():
-    name = input("Введите имя команды:")
-    games = asyncio.run(getInfo(name))
-    #games = asyncio.run(getShedule(1))
+    #name = input("Введите имя команды:")
+    #games = asyncio.run(getInfo(name))
+    games = asyncio.run(getShedule(1))
     for game in games:
         print(game)
 

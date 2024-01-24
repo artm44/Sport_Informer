@@ -1,5 +1,5 @@
 import asyncio
-import requests
+import aiohttp
 import json
 
 from config import VK_TOKEN
@@ -20,8 +20,10 @@ async def getVideos(sport: str, count: int=10) -> [{}]:
             'owner_id': group['id'],
             'count' : count
         }
-        response = requests.get(url, params)
-        data = response.json()
+        data = None
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:  
+                data = await response.json()
         if 'response' in data:
             videos.append({'group_url': group['url'], 'videos': data['response']['items']})
     return videos
@@ -40,6 +42,8 @@ async def getBroadcastLink(team1: str, team2: str, items: [{}]) -> str:
 def main():
     data = input("Введите название спорта, имя команды1, имя команды2:").split()
     videos = asyncio.run(getVideos(data[0]))
+    for video in videos:
+        print(video)
     link = asyncio.run(getBroadcastLink(data[1], data[2], videos))
     print(link)
 

@@ -35,7 +35,10 @@ class GameInfo:
         return f"{hunderline(date)} {tournament}: {hbold(self.player1)} {score1} - {score2} {hbold(self.player2)} {game_status}"
     
 
-def filter_games(games: list[GameInfo], past: int, future: int) -> list[GameInfo]:
+async def filter_games(games: list[GameInfo], results: int, presents: int) -> list[GameInfo]:
+    """
+    Filtering games: 
+    """
     today = datetime.now()
     ind = 0
     for game in games:
@@ -44,8 +47,9 @@ def filter_games(games: list[GameInfo], past: int, future: int) -> list[GameInfo
         else:
             ind += 1
     
-    return games[0 if (ind - past) < 0 else (ind - past) : ind] + games[ind: len(games) if (ind + future) > len(games) else (ind + future)]
-    
+    return games[0 if (ind - results) < 0 else (ind - results) : ind] \
+         + games[ind: len(games) if (ind + presents) > len(games) else (ind + presents)]
+     
 
 
 
