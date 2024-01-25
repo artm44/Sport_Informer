@@ -10,6 +10,11 @@ with open('parsers/vk_groups.json') as f:
 
 
 async def getVideos(sport: str, count: int=10) -> [{}]:
+    """
+    Returns list of videos for some sport from vk groups
+    Returns:
+        _type_: _description_
+    """
     url = 'https://api.vk.com/method/video.get'
     groups = templates[sport]['groups']
     videos = []
@@ -28,7 +33,17 @@ async def getVideos(sport: str, count: int=10) -> [{}]:
             videos.append({'group_url': group['url'], 'videos': data['response']['items']})
     return videos
 
-async def getBroadcastLink(team1: str, team2: str, items: [{}]) -> str:
+async def getBroadcastLink(team1: str, team2: str, items: [{}]) -> str | None:
+    """
+    Filters incoming videos and returns a link to the match broadcast
+    Args:
+        team1 (str): team1
+        team2 (str): team2
+        items (_type_): videos for filtering
+
+    Returns:
+        str | None : broadcast link
+    """
     for item in items:
         group_url = item['group_url']
         videos = item['videos']
@@ -36,7 +51,7 @@ async def getBroadcastLink(team1: str, team2: str, items: [{}]) -> str:
             title = video['title']
             if (team1.split()[0] in title or team2.split()[0] in title) and video.get('live_status') == 'started':
                 return f"{group_url}?z=video{video['owner_id']}_{video['id']}"
-    return ""
+    return None
 
 
 def main():

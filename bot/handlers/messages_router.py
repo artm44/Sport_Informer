@@ -17,7 +17,7 @@ async def info_handler(message: types.Message) -> None:
     """
     games = await getInfo(message.text)
     if len(games) == 0:
-        await message.answer("Такой команды или не спортсмена не найдено!\nПопробуйте снова")
+        await message.answer("Такой команды или спортсмена не найдено!\nПопробуйте снова")
         return
     
     videos = await getVideos(games[0].sport)
@@ -39,7 +39,7 @@ async def info_handler(message: types.Message) -> None:
         answer += "• " + game.to_str(False)
         if game.status:
             link = await getBroadcastLink(team1=game.player1, team2=game.player2, items=videos)
-            if len(link) != 0:
+            if not link is None:
                 answer += " " + hlink("ССЫЛКА", link)
         answer += "\n"
     await message.answer(text=answer)

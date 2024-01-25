@@ -12,20 +12,40 @@ from parsers.models import GameInfo
 HEADERS = {"X-Fsign": "SW9D1eZo"}
 
 async def getUrlParams(team: str) -> list[str] | None:
-    param = urlencode({'q': team})
+    """
+    Returns url parameters for the team results url-page
+    Args:
+        team (str): sport team
 
+    Returns:
+        list[str] | None: list with url parameters
+    """
+    param = urlencode({'q': team})
     url = f"https://s.livesport.services/api/v2/search/?{param}&lang-id=12&type-ids=1,2,3,4&project-id=46&project-type-id=1"
+
     async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 text = await response.text() 
+
     if text == "[]":
         return None
-    return [json.loads(text)[0]['type']['name'].lower(), json.loads(text)[0]['url'], json.loads(text)[0]['id']]
+    
+    data = json.loads(text)[0]
+    return [data['type']['name'].lower(), data['url'], data['id']]
 
 async def getInfo(name: str) -> list[GameInfo]:
+    """
+    Returns information (results, fixtures) about team
+    Args:
+        name (str): name of team
+
+    Returns:
+        list[GameInfo]: list with games 
+    """
     response = await getUrlParams(name)
     if response is None:
         return []
+    
     url_params = response
     url = f"https://www.flashscorekz.com/{url_params[0]}/{url_params[1]}/{url_params[2]}/"
 
@@ -71,12 +91,23 @@ async def getInfo(name: str) -> list[GameInfo]:
     games = sorted(games, key=lambda game: game.date)
     return games
 
-
 async def getShedule(sport_id: int, date: int = 0) -> list[GameInfo]:
+    """ 
+    Returns the shedule 
+
+    Args:
+        sport_id (int): sport
+        date (int, optional): difference of a day from today. Defaults to 0.
+
+    Returns:
+        list[GameInfo]: list with games
+    """
     url = f"https://local-ruua.flashscore.ninja/46/x/feed/f_{sport_id}_{date}_3_ru-kz_1"
+
     async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=HEADERS) as response:
                 text = await response.text()
+
     data_list = [{}]
     data = text.split('¬')
     for item in data:

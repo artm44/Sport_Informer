@@ -49,7 +49,7 @@ async def command_sport_handler(message: types.Message) -> None:
         answer += "• " + game.to_str(False)
         if game.status:
             link = await getBroadcastLink(team1=game.player1, team2=game.player2, items=videos)
-            if len(link) != 0:
+            if not link is None:
                 answer += " " + hlink("ССЫЛКА", link)
         answer += "\n"
     await message.answer(text=answer)
