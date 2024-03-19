@@ -9,31 +9,37 @@ with open('parsers/vk_groups.json') as f:
     templates = json.loads(file_content)
 
 
-async def getVideos(sport: str, count: int=10) -> [{}]:
+async def get_videos(sport: str, count: int = 10) -> [{}]:
     """
     Returns list of videos for some sport from vk groups
     Returns:
         _type_: _description_
     """
     url = 'https://api.vk.com/method/video.get'
-    groups = templates[sport]['groups']
+    try:
+        groups = templates[sport]['groups']
+    except KeyError:
+        return []
     videos = []
     for group in groups:
         params = {
             'access_token': VK_TOKEN,
             'v': '5.131',
             'owner_id': group['id'],
-            'count' : count
+            'count': count
         }
-        data = None
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params) as response:  
-                data = await response.json()
+            try:
+                async with session.get(url, params=params, ssl=False) as response:
+                    data = await response.json()
+            except:
+                return []
         if 'response' in data:
             videos.append({'group_url': group['url'], 'videos': data['response']['items']})
     return videos
 
-async def getBroadcastLink(team1: str, team2: str, items: [{}]) -> str | None:
+
+async def get_broadcast_link(team1: str, team2: str, items: [{}]) -> str | None:
     """
     Filters incoming videos and returns a link to the match broadcast
     Args:
@@ -56,11 +62,12 @@ async def getBroadcastLink(team1: str, team2: str, items: [{}]) -> str | None:
 
 def main():
     data = input("Введите название спорта, имя команды1, имя команды2:").split()
-    videos = asyncio.run(getVideos(data[0]))
+    videos = asyncio.run(get_videos(data[0]))
     for video in videos:
         print(video)
-    link = asyncio.run(getBroadcastLink(data[1], data[2], videos))
+    link = asyncio.run(get_broadcast_link(data[1], data[2], videos))
     print(link)
+
 
 if __name__ == "__main__":
     main()
