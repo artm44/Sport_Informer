@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+import json
 
 from aiogram.utils.markdown import hbold, hunderline
 
@@ -30,6 +31,14 @@ class GameInfo:
         tournament = self.tournament if spec else ""
         return f"{hunderline(date)} {tournament}: {hbold(self.player1)} {score1} - \
 {score2} {hbold(self.player2)} {game_status}"
+
+    def to_json(self):
+        return json.dumps(self.__dict__)
+
+    @classmethod
+    def from_json(cls, json_string):
+        json_data = json.loads(json_string)
+        return cls(**json_data)
 
 
 async def filter_games(games: list[GameInfo], results: int, presents: int) -> list[GameInfo]:

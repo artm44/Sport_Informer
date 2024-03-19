@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 import json
+import redis
 
 from config import VK_TOKEN
 
@@ -20,6 +21,13 @@ async def get_videos(sport: str, count: int = 10) -> [{}]:
         groups = templates[sport]['groups']
     except KeyError:
         return []
+
+    hash_name = f"videos_{sport}"
+    with redis.Redis(host="redis") as redis_client:
+        value = redis_client.get(hash_name)
+        if value is not None:
+            return json.loads(value)
+
     videos = []
     for group in groups:
         params = {
@@ -36,6 +44,10 @@ async def get_videos(sport: str, count: int = 10) -> [{}]:
                 return []
         if 'response' in data:
             videos.append({'group_url': group['url'], 'videos': data['response']['items']})
+
+    with redis.Redis(host="redis") as redis_client:
+        redis_client.set(hash_name, json.dumps(videos), ex=60)
+
     return videos
 
 

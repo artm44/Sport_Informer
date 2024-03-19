@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import re
 import json
+import redis
 
 from datetime import datetime
 from typing import List
@@ -47,6 +48,11 @@ async def get_info(name: str) -> list[GameInfo]:
     response = await get_url_params(name)
     if response is None:
         return []
+    # hash_name = f"url_{response[2]}"
+    # with redis.Redis() as redis_client:
+    #    value = redis_client.get(hash_name)
+    #    if value is not None:
+    #        return [GameInfo.from_json(game) for game in value]
 
     url_params = response
     url = f"https://www.flashscorekz.com/{url_params[0]}/{url_params[1]}/{url_params[2]}/"
@@ -75,7 +81,7 @@ async def get_info(name: str) -> list[GameInfo]:
     if len(data_list) == 0:
         return []
 
-    games = []
+    games: list[GameInfo] = []
     tournament = None
     for item in data_list:
         if '~ZA' in list(item.keys())[0]:
@@ -92,13 +98,15 @@ async def get_info(name: str) -> list[GameInfo]:
         games.append(GameInfo(date=date, tournament=tournament, player1=player1, player2=player2,
                               score1=score1, score2=score2, status=status, sport_id=sport_id))
     games = sorted(games, key=lambda game: game.date)
+    # with redis.Redis() as redis_client:
+    #    games_json = [game.to_json() for game in games]
+    #    redis_client.set(hash_name, json.dumps(games_json), ex=30)
     return games
 
 
 async def get_shedule(sport_id: int, date: int = 0) -> list[GameInfo]:
     """ 
-    Returns the shedule 
-
+    Returns the shedule of the sport
     Args:
         sport_id (int): sport
         date (int, optional): difference of a day from today. Defaults to 0.
