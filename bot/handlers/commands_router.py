@@ -2,7 +2,7 @@ from aiogram import Router, types
 from aiogram.filters import Command, CommandStart
 from aiogram.utils.markdown import hitalic, hlink, hbold
 
-from parsers.flash_score import getShedule
+from parsers.flash_score import get_shedule
 from parsers.vk import get_broadcast_link, get_videos
 from parsers.models import SPORTS
 
@@ -37,7 +37,7 @@ async def command_sport_handler(message: types.Message) -> None:
     """
     sport = message.text[1:]
     sport_id = SPORTS.get(sport)
-    games = await getShedule(sport_id)
+    games = await get_shedule(sport_id)
     if len(games) == 0:
         answer = "Матчей сегодня нет"
         await message.answer(text=answer)
@@ -57,7 +57,7 @@ async def command_sport_handler(message: types.Message) -> None:
         answer += "\n"
     await message.answer(text=answer)
 
-    games = await getShedule(sport_id, 1)
+    games = await get_shedule(sport_id, 1)
     if len(games) == 0:
         return
     tournament = games[0].tournament

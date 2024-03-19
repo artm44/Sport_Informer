@@ -2,7 +2,7 @@ from datetime import datetime
 from aiogram import Router, types
 from aiogram.utils.markdown import hitalic, hbold, hlink
 
-from parsers.flash_score import getInfo
+from parsers.flash_score import get_info
 from parsers.models import filter_games
 from parsers.vk import get_broadcast_link, get_videos
 
@@ -16,7 +16,7 @@ async def info_handler(message: types.Message) -> None:
 
     By default, message handler will handle all message types (like a text, photo, sticker etc.)
     """
-    games = await getInfo(message.text)
+    games = await get_info(message.text)
     if len(games) == 0:
         await message.answer("Такой команды или спортсмена не найдено!\nПопробуйте снова")
         return
