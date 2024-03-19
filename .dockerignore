@@ -17,6 +17,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+myenv/
 build/
 develop-eggs/
 dist/
@@ -71,3 +72,6 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+# Files for GitHub
+*.jpg
