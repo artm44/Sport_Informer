@@ -8,6 +8,7 @@ Sport Informer - это телеграмм бот, разработанный н
 - **Бот:** aiogram
 - **Парсинг:** Используется для получения статистики с сайта flashscore.
 - **Трансляции:** Интеграция с VK API для получения ссылок на трансляции.
+- **Базы данных:** Redis
 - **Контейниризация:** Использование docker
 
 ## Установка
@@ -25,11 +26,7 @@ Sport Informer - это телеграмм бот, разработанный н
 To run the server on a Docker container, please execute the following from the root directory:
 
 ```bash
-# building the image
-docker build -t sport_informer_app .
-
-# starting up a container
-docker run -p 8080:8080 sport_informer_app
+docker-compose up
 ```
 
 ## Функциональности
