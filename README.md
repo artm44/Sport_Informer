@@ -19,7 +19,8 @@ Sport Informer - это телеграмм бот, разработанный н
 - На Linux/Mac: `source venv/bin/activate`
 4. Установите зависимости: `pip install -r requirements.txt`
 5. Создайте файл `.env` с токенами Телеграмма и ВКонтакте
-6. Запустите бот: `python main.py`
+6. Запустите Redis. Например, при помощи Docker `docker run -p 127.0.0.1:6379:6379 redis:latest`
+7. Запустите бот: `python main.py`
 
 ## Запуск в Docker
 
