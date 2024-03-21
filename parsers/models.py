@@ -33,11 +33,13 @@ class GameInfo:
 {score2} {hbold(self.player2)} {game_status}"
 
     def to_json(self):
-        return json.dumps(self.__dict__)
+        game_dict = self.__dict__.copy()
+        game_dict['date'] = str(game_dict['date'])
+        return json.dumps(game_dict)
 
     @classmethod
-    def from_json(cls, json_string):
-        json_data = json.loads(json_string)
+    def from_json(cls, json_data):
+        json_data['date'] = datetime.strptime(json_data['date'], '%Y-%m-%d %H:%M:%S')
         return cls(**json_data)
 
 
