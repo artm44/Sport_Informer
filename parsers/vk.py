@@ -1,9 +1,9 @@
 import asyncio
 import aiohttp
 import json
-import redis
 
 from config import VK_TOKEN
+from database.redis_utils import get_from_redis, set_to_redis
 
 with open('parsers/vk_groups.json') as f:
     file_content = f.read()
@@ -23,10 +23,11 @@ async def get_videos(sport: str, count: int = 10) -> [{}]:
         return []
 
     hash_name = f"videos_{sport}"
-    with redis.Redis(host="redis") as redis_client:
-        value = redis_client.get(hash_name)
-        if value is not None:
-            return json.loads(value)
+
+    value = await get_from_redis(hash_name)
+
+    if value is not None:
+        return json.loads(value)
 
     videos = []
     for group in groups:
@@ -40,13 +41,12 @@ async def get_videos(sport: str, count: int = 10) -> [{}]:
             try:
                 async with session.get(url, params=params, ssl=False) as response:
                     data = await response.json()
-            except:
+            except aiohttp.HTTPException:
                 return []
         if 'response' in data:
             videos.append({'group_url': group['url'], 'videos': data['response']['items']})
 
-    with redis.Redis(host="redis") as redis_client:
-        redis_client.set(hash_name, json.dumps(videos), ex=60)
+    await set_to_redis(hash_name, json.dumps(videos), ex=60)
 
     return videos
 
@@ -69,6 +69,7 @@ async def get_broadcast_link(team1: str, team2: str, items: [{}]) -> str | None:
             title = video['title']
             if (team1.split()[0] in title or team2.split()[0] in title) and video.get('live_status') == 'started':
                 return f"{group_url}?z=video{video['owner_id']}_{video['id']}"
+
     return None
 
 

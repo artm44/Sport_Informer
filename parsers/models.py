@@ -43,7 +43,7 @@ class GameInfo:
         return cls(**json_data)
 
 
-async def filter_games(games: list[GameInfo], results: int, presents: int) -> list[GameInfo]:
+def filter_games(games: list[GameInfo], results: int, presents: int) -> list[GameInfo]:
     """
     Filtering games: 
     """
@@ -52,8 +52,7 @@ async def filter_games(games: list[GameInfo], results: int, presents: int) -> li
     for game in games:
         if game.date > today:
             break
-        else:
-            ind += 1
+        ind += 1
 
     return games[0 if (ind - results) < 0 else (ind - results): ind] \
         + games[ind: len(games) if (ind + presents) > len(games) else (ind + presents)]

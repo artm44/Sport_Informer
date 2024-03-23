@@ -16,3 +16,6 @@ VK_TOKEN = os.getenv('VK_TOKEN')
 if VK_TOKEN is None:
     print("Ошибка: Токен вашей страницы в VK не найден в переменных окружения.")
     sys.exit(1)
+
+# Подключение к Redis
+REDIS_SETTINGS = {'host': 'redis', 'port': 6379}

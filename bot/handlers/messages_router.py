@@ -22,7 +22,7 @@ async def info_handler(message: types.Message) -> None:
         return
 
     videos = await get_videos(games[0].sport)
-    games = await filter_games(games, 4, 3)
+    games = filter_games(games, 4, 3)
 
     tournament = ""
 

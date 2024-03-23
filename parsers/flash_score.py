@@ -2,12 +2,12 @@ import asyncio
 import aiohttp
 import re
 import json
-import redis
 
 from datetime import datetime
 from urllib.parse import urlencode
 
 from parsers.models import GameInfo
+from database.redis_utils import get_from_redis, set_to_redis
 
 HEADERS = {"X-Fsign": "SW9D1eZo"}
 
@@ -22,7 +22,8 @@ async def get_url_params(team: str) -> list[str] | None:
         list[str] | None: list with url parameters
     """
     param = urlencode({'q': team})
-    url = f"https://s.livesport.services/api/v2/search/?{param}&lang-id=12&type-ids=1,2,3,4&project-id=46&project-type-id=1"
+    url = (f"https://s.livesport.services/api/v2/search/?{param}&lang-id=12&type-ids=1,2,3,"
+           f"4&project-id=46&project-type-id=1")
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
@@ -47,12 +48,13 @@ async def get_info(name: str) -> list[GameInfo]:
     response = await get_url_params(name)
     if response is None:
         return []
+
     hash_name = f"url_{response[2]}"
-    with redis.Redis(host="redis") as redis_client:
-        value = redis_client.get(hash_name)
-        if value is not None:
-            games = json.loads(value)
-            return [GameInfo.from_json(json.loads(game)) for game in games]
+    value: str = await get_from_redis(hash_name)
+
+    if value is not None:
+        games = json.loads(value)
+        return [GameInfo.from_json(json.loads(game)) for game in games]
 
     url_params = response
     url = f"https://www.flashscorekz.com/{url_params[0]}/{url_params[1]}/{url_params[2]}/"
@@ -97,10 +99,12 @@ async def get_info(name: str) -> list[GameInfo]:
 
         games.append(GameInfo(date=date, tournament=tournament, player1=player1, player2=player2,
                               score1=score1, score2=score2, status=status, sport_id=sport_id))
+
     games = sorted(games, key=lambda game: game.date)
-    with redis.Redis(host="redis") as redis_client:
-        games_json = [game.to_json() for game in games]
-        redis_client.set(hash_name, json.dumps(games_json), ex=60)
+
+    games_json = [game.to_json() for game in games]
+    await set_to_redis(hash_name, json.dumps(games_json), 60)
+
     return games
 
 
@@ -115,11 +119,11 @@ async def get_schedule(sport_id: int, date: int = 0) -> list[GameInfo]:
         list[GameInfo]: list with games
     """
     hash_name = f"schedule_{sport_id}_{date}"
-    with redis.Redis(host="redis") as redis_client:
-        value = redis_client.get(hash_name)
-        if value is not None:
-            games = json.loads(value)
-            return [GameInfo.from_json(json.loads(game)) for game in games]
+    value: str = await get_from_redis(hash_name)
+
+    if value is not None:
+        games = json.loads(value)
+        return [GameInfo.from_json(json.loads(game)) for game in games]
 
     url = f"https://local-ruua.flashscore.ninja/46/x/feed/f_{sport_id}_{date}_3_ru-kz_1"
 
@@ -163,9 +167,10 @@ async def get_schedule(sport_id: int, date: int = 0) -> list[GameInfo]:
 
         games.append(GameInfo(date=date, tournament=tournament, player1=player1, player2=player2,
                               score1=score1, score2=score2, status=status, sport_id=sport_id))
-    with redis.Redis(host="redis") as redis_client:
-        games_json = [game.to_json() for game in games]
-        redis_client.set(hash_name, json.dumps(games_json), ex=60)
+
+    games_json = [game.to_json() for game in games]
+    await set_to_redis(hash_name, json.dumps(games_json), 60)
+
     return games
 
 

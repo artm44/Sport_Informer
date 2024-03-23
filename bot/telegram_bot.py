@@ -7,9 +7,9 @@ from bot.handlers.messages_router import messages_router
 
 
 class TelegramBot:
-    
+
     def __init__(self) -> None:
-        self.allowed_updates = ['message']           
+        self.allowed_updates = ['message']
         self.bot = Bot(token=TELEGRAMM_TOKEN, parse_mode=ParseMode.HTML)
         self.dp = Dispatcher()
         self.dp.include_routers(commands_router, messages_router)
