@@ -31,7 +31,7 @@ async def info_handler(message: types.Message) -> None:
     flag = True
     for game in games:
         if flag and game.date > today:
-            answer += f"\n{hbold("Предстоящие матчи")}:\n"
+            answer += f"\n{hbold("Предстоящие события")}:\n"
             flag = False
             tournament = ""
         if tournament != game.tournament:

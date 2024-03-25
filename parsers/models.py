@@ -179,10 +179,10 @@ class RaceInfo(Info):
     def to_str(self, spec: bool = True):
         race_status = "LIVE" if self.status else ""
         place = self.place
-        gap = self.gap
+        gap = self.gap if self.gap != '+0.000' else ''
         date = self.date.strftime("%d.%m.%Y %H:%M")
         tournament = self.tournament if spec else ""
-        return f"{hunderline(date)} {tournament}: {place}. {gap} {race_status}"
+        return f"{hunderline(date)} {tournament}: {hbold(place)} {gap} {race_status}"
 
     @classmethod
     def get_url(cls, url_params: dict, type_info: str) -> str:
@@ -207,11 +207,11 @@ class RaceInfo(Info):
     @classmethod
     def parse_data(cls, data: list[dict], sport_id: int, type_info: str) -> list:
         races: list[RaceInfo] = []
-        tournament = None
+        tournament = ''
         is_important = True
         for item in data:
-            if '~ZY' in list(item.keys())[0]:
-                tournament = item.get('~ZY')
+            if 'ZY' in item.keys():
+                tournament = item.get('ZY')
                 if type_info == 'schedule':
                     if item.get('ZD', '') == 't' or is_important_tournament(tournament, sport_id):
                         is_important = True
@@ -225,7 +225,7 @@ class RaceInfo(Info):
 
             date = datetime.fromtimestamp(int(item.get('AD')))
             player = item.get('AD', '')
-            place = item.get('NI', '')
+            place = item.get('WS', '')
             gap = item.get('NG', '')
             status = True if item.get('AN', '') == "y" else False
 
@@ -239,7 +239,7 @@ class InfoFactory:
     def get(sport_id: int) -> Info:
         classes = {
             "GameInfo": GameInfo,
-            # "RaceInfo": RaceInfo
+            "RaceInfo": RaceInfo
         }
 
         class_name = None
@@ -249,4 +249,5 @@ class InfoFactory:
                 break
 
         class_ = classes.get(class_name, None)
-        return GameInfo
+
+        return class_

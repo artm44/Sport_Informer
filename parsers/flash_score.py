@@ -60,7 +60,9 @@ async def get_info(name: str) -> list[Info]:
         return []
 
     # Получаем нужную реализацию класса
-    info_class_ = InfoFactory.get(SPORTS_BY_ID[sport_id])
+    info_class_ = InfoFactory.get(sport_id)
+    if info_class_ is None:
+        return []
 
     # Поиск данных в Редис
     hash_name = f"url_{url_params['id']}"
@@ -99,7 +101,10 @@ async def get_schedule(sport_id: int, date: int = 0) -> list[Info]:
         list[GameInfo]: list with games
     """
     # Получаем нужную реализацию класса
-    info_class_ = InfoFactory.get(SPORTS_BY_ID[sport_id])
+    info_class_ = InfoFactory.get(sport_id)
+
+    if info_class_ is None:
+        return []
 
     # Поиск данных в Редис
     hash_name = f"schedule_{sport_id}_{date}"
