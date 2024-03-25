@@ -6,7 +6,8 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - ./database/redis/redis:/var/lib/redis
+      - ./database/redis/redis-config:/usr/local/etc/redis/redis.conf
 
   sport-informer:
     build: .
@@ -14,6 +15,3 @@ services:
       - "8080:8080"
     depends_on:
       - redis
-
-volumes:
-  redis_data:

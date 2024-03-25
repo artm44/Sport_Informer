@@ -1,18 +1,16 @@
 import asyncio
 import aiohttp
-import re
 import json
 
-from datetime import datetime
 from urllib.parse import urlencode
 
-from parsers.models import GameInfo
+from parsers.models import Info, SPORTS_BY_ID, InfoFactory
 from database.redis_utils import get_from_redis, set_to_redis
 
 HEADERS = {"X-Fsign": "SW9D1eZo"}
 
 
-async def get_url_params(team: str) -> list[str] | None:
+async def get_url_params(team: str) -> tuple[dict, int] | None:
     """
     Returns url parameters for the team results url-page
     Args:
@@ -33,10 +31,15 @@ async def get_url_params(team: str) -> list[str] | None:
         return None
 
     data = json.loads(text)[0]
-    return [data['type']['name'].lower(), data['url'], data['id']]
+    url_info = {
+        'type': data['type']['name'].lower(),
+        'url': data['url'],
+        'id': data['id']
+    }
+    return url_info, int(data['sport']['id'])
 
 
-async def get_info(name: str) -> list[GameInfo]:
+async def get_info(name: str) -> list[Info]:
     """
     Returns information (results, fixtures) about team
     Args:
@@ -45,70 +48,47 @@ async def get_info(name: str) -> list[GameInfo]:
     Returns:
         list[GameInfo]: list with games 
     """
+    # Находим параметры для получения данных
     response = await get_url_params(name)
     if response is None:
         return []
 
-    hash_name = f"url_{response[2]}"
+    url_params, sport_id = response
+
+    # Проверка на возможность обработки такого вида спорта
+    if sport_id not in SPORTS_BY_ID.keys():
+        return []
+
+    # Получаем нужную реализацию класса
+    info_class_ = InfoFactory.get(SPORTS_BY_ID[sport_id])
+
+    # Поиск данных в Редис
+    hash_name = f"url_{url_params['id']}"
     value: str = await get_from_redis(hash_name)
-
     if value is not None:
-        games = json.loads(value)
-        return [GameInfo.from_json(json.loads(game)) for game in games]
+        games_json = json.loads(value)
+        return [info_class_.from_json(json.loads(game)) for game in games_json]
 
-    url_params = response
-    url = f"https://www.flashscorekz.com/{url_params[0]}/{url_params[1]}/{url_params[2]}/"
-
+    # Получаем данные из интернета
+    url = info_class_.get_url(url_params, url_params['type'])
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
+        async with session.get(url, headers=HEADERS) as response:
             response_text = await response.text()
 
-    text = re.findall(r'summary-[results, fixtures].*\n.*`(SA.*)', response_text)
+    data_list = info_class_.parse_text(response_text, url_params['type'])
 
-    if len(text) == 0:
-        return []
-
-    sport_id = int(re.search(r'sport=(\d+)', response_text).group(1))
-
-    data_list = [{}]
-    for txt in text:
-        data = txt.split('¬')
-        for item in data:
-            key, value = item.split('÷')[0], item.split('÷')[-1]
-            if '~' in item:
-                data_list.append({key: value})
-            else:
-                data_list[-1].update({key: value})
-
-    if len(data_list) == 0:
-        return []
-
-    games: list[GameInfo] = []
-    tournament = None
-    for item in data_list:
-        if '~ZA' in list(item.keys())[0]:
-            tournament = item.get('~ZA')
-        if '~AA' not in list(item.keys())[0]:
-            continue
-        date = datetime.fromtimestamp(int(item.get('AD')))
-        player1 = item.get('AE')
-        player2 = item.get('AF')
-        score1 = item.get('AG')
-        score2 = item.get('AH')
-        status = True if item.get('AN') == "y" else False
-
-        games.append(GameInfo(date=date, tournament=tournament, player1=player1, player2=player2,
-                              score1=score1, score2=score2, status=status, sport_id=sport_id))
+    games: list[Info] = info_class_.parse_data(data_list, sport_id, url_params['type'])
 
     games = sorted(games, key=lambda game: game.date)
 
+    # Запись данных в Редис
     games_json = [game.to_json() for game in games]
     await set_to_redis(hash_name, json.dumps(games_json), 60)
 
     return games
 
 
-async def get_schedule(sport_id: int, date: int = 0) -> list[GameInfo]:
+async def get_schedule(sport_id: int, date: int = 0) -> list[Info]:
     """ 
     Returns the schedule of the sport
     Args:
@@ -118,56 +98,28 @@ async def get_schedule(sport_id: int, date: int = 0) -> list[GameInfo]:
     Returns:
         list[GameInfo]: list with games
     """
+    # Получаем нужную реализацию класса
+    info_class_ = InfoFactory.get(SPORTS_BY_ID[sport_id])
+
+    # Поиск данных в Редис
     hash_name = f"schedule_{sport_id}_{date}"
     value: str = await get_from_redis(hash_name)
-
     if value is not None:
         games = json.loads(value)
-        return [GameInfo.from_json(json.loads(game)) for game in games]
+        return [info_class_.from_json(json.loads(game)) for game in games]
 
-    url = f"https://local-ruua.flashscore.ninja/46/x/feed/f_{sport_id}_{date}_3_ru-kz_1"
+    # Получаем данные из интернета
+    url = info_class_.get_url({'id': sport_id, 'date': date}, 'schedule')
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=HEADERS) as response:
-            text = await response.text()
+            response_text = await response.text()
 
-    data_list = [{}]
-    data = text.split('¬')
-    for item in data:
-        key, value = item.split('÷')[0], item.split('÷')[-1]
-        if '~' in item:
-            data_list.append({key: value})
-        else:
-            data_list[-1].update({key: value})
+    data_list = info_class_.parse_text(response_text, 'schedule')
 
-    games = []
-    tournament = None
-    is_important = False
-    for item in data_list:
-        if '~ZA' in list(item.keys())[0]:  # tournament
-            tournament = item.get('~ZA')
-            if item.get('ZD') == 't':
-                is_important = True
-            else:
-                is_important = False
-            continue
+    games: list[Info] = info_class_.parse_data(data_list, sport_id, 'schedule')
 
-        if not is_important:
-            continue
-
-        if '~AA' not in list(item.keys())[0]:  # game
-            continue
-
-        date = datetime.fromtimestamp(int(item.get('AD')))
-        player1 = item.get('AE')
-        player2 = item.get('AF')
-        score1 = item.get('AG')
-        score2 = item.get('AH')
-        status = True if item.get('AN') == "y" else False
-
-        games.append(GameInfo(date=date, tournament=tournament, player1=player1, player2=player2,
-                              score1=score1, score2=score2, status=status, sport_id=sport_id))
-
+    # Запись данных в Редис
     games_json = [game.to_json() for game in games]
     await set_to_redis(hash_name, json.dumps(games_json), 60)
 

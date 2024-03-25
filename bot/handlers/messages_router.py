@@ -3,7 +3,7 @@ from aiogram import Router, types
 from aiogram.utils.markdown import hitalic, hbold, hlink
 
 from parsers.flash_score import get_info
-from parsers.models import filter_games
+from parsers.games_utils import filter_games
 from parsers.vk import get_broadcast_link, get_videos
 
 messages_router = Router()
